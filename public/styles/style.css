@@ -1,0 +1,33 @@
+.hero-container {
+  display: flex;
+  max-width: 1100px;
+  flex-wrap: wrap;
+}
+
+.nav__profile {
+  display: flex;
+  align-items: center;
+}
+
+.nav__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.nav__profile p {
+  margin: 0;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+.main__poster {
+  max-width: 800px;
+  border-radius: 20px;
+  box-shadow: 3px 4px 3px 0px rgba(0, 0, 0, 0.7);
+  margin: 0 auto;
+}
