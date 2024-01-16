@@ -1,11 +1,14 @@
 const router = require('express').Router();
+const bcrypt = require('bcrypt');
 const { User } = require('../../db/models');
+const generateTokens = require('../../utils/authUtils');
+const configJWT = require('../../middleware/configJWT');
 // Логика входа и регистрации
 
 router.post('/sign-in', async (req, res) => {
+  let user;
   try {
     const { name, password } = req.body;
-    let user;
     user = await User.findOne({ where: { name } });
     if (!user) {
       res.json({
@@ -13,13 +16,15 @@ router.post('/sign-in', async (req, res) => {
       });
       return;
     }
-    if (user.password !== password) {
+    const isSame = await bcrypt.compare(password, user.password);
+    if (!isSame) {
+      //если пароль не совпадает с паролем из базы
       res.json({
         message: 'Такой пользователь не существует или пароль неверный',
       });
       return;
     }
-    res.json({message:'success'})
+    res.json({ message: 'success' });
   } catch ({ message }) {
     console.log({ message });
   }
@@ -36,11 +41,34 @@ router.post('/sign-up', async (req, res) => {
       res.json({ message: 'Такой пользователь уже есть.' });
       return;
     }
-    user = await User.create({ name, password, img });
+    const hash = await bcrypt.hash(password, 10);
+    user = await User.create({ name, password: hash, img });
+
+    //Генерируем токены
+    const { accessToken, refreshToken } = generateTokens({
+      user: { id: user.id, name: user.name, img: user.img },
+    });
+
+    //Устанавливаем куки
+    res.cookie('access', accessToken, {
+      maxAge: 1000 * 60 * 5,
+      httpOnly: true,
+    });
+
+    res.cookie('refresh', refreshToken, {
+      maxAge: 1000 * 60 * 60 * 12,
+      httpOnly: true,
+    });
+
     res.json({ message: 'success' });
   } catch ({ message }) {
     console.log({ message });
   }
+});
+
+router.get('/logout', (req, res) => {
+  res.clearCookie(configJWT.access.type).clearCookie(configJWT.refresh.type);
+  res.redirect('/');
 });
 
 module.exports = router;
